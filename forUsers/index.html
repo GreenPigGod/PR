@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>PRアプリ Web版</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="main.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <span class="site-title">PRアプリ Web版</span>
+    <div id="headerActions" class="header-actions" hidden>
+      <button id="syncBtn"   class="btn">再読み込み</button>
+      <button id="logoutBtn" class="btn btn-danger">ログアウト</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- ログインセクション -->
+    <section id="loginSection" class="card">
+      <h2>ログイン</h2>
+      <p>LINE WORKS アカウントでログインしてください。</p>
+      <a href="oauth_login.php" class="btn btn-primary">LINE WORKS でログイン</a>
+    </section>
+
+    <!-- メインセクション -->
+    <section id="mainSection" hidden>
+      <p id="status" class="status"></p>
+      <div id="categories" class="categories"></div>
+    </section>
+  </main>
+
+</body>
+</html>
+
+
+

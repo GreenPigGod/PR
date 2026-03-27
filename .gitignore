@@ -1,0 +1,15 @@
+# 認証情報・設定
+config.php
+
+# セッション
+_sessions/
+
+# ログ
+*.log
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
