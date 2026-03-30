@@ -146,7 +146,7 @@ function lw_upsert_event(PDO $pdo, string $userId, string $evId, string $calId, 
         "INSERT INTO lw_events (lw_user_id, event_id, calendar_id, task_id, title, start_at, end_at, memo, deleted)
          VALUES (:uid,:eid,:calid,NULL,:title,:start,:end,:memo,0)
          ON DUPLICATE KEY UPDATE
-           title=VALUES(title), start_at=VALUES(start_at), end_at=VALUES(end_at), memo=VALUES(memo), deleted=0"
+           calendar_id=VALUES(calendar_id), title=VALUES(title), start_at=VALUES(start_at), end_at=VALUES(end_at), memo=VALUES(memo), deleted=0"
     )->execute([':uid' => $userId, ':eid' => $evId, ':calid' => $calId, ':title' => $title, ':start' => $startFmt, ':end' => $endFmt, ':memo' => $memo]);
 }
 
