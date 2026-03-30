@@ -83,10 +83,16 @@
         <input type="text" name="evTitle" class="form-input" placeholder="予定のタイトル">
       </label>
       <label class="form-label">開始日時 <span class="required">*</span>
-        <input type="datetime-local" name="evStart" class="form-input">
+        <div class="dt-row">
+          <input type="date" name="evStartDate" class="form-input">
+          <input type="time" name="evStartTime" class="form-input">
+        </div>
       </label>
       <label class="form-label">終了日時 <span class="required">*</span>
-        <input type="datetime-local" name="evEnd" class="form-input">
+        <div class="dt-row">
+          <input type="date" name="evEndDate" class="form-input">
+          <input type="time" name="evEndTime" class="form-input">
+        </div>
       </label>
       <label class="form-label">メモ
         <textarea name="evNote" class="form-input form-textarea" rows="2"></textarea>

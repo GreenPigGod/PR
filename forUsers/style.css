@@ -403,6 +403,10 @@ body {
 .form-textarea { resize: vertical; min-height: 60px; }
 .form-select   { cursor: pointer; }
 
+.dt-row { display: flex; gap: 8px; }
+.dt-row .form-input:first-child { flex: 3; }
+.dt-row .form-input:last-child  { flex: 2; }
+
 /* ── 気持ちボタン ────────────────────────────── */
 .emo-group { display: flex; gap: 6px; margin-top: 2px; }
 

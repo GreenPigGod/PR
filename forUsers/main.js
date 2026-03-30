@@ -518,8 +518,10 @@ function openEventModal(ev, task) {
 
     const f = eventForm;
     f.querySelector('[name=evTitle]').value = ev ? ev.title : (task ? task.taskName : '');
-    f.querySelector('[name=evStart]').value = ev ? toDatetimeLocal(ev.from)  : '';
-    f.querySelector('[name=evEnd]').value   = ev ? toDatetimeLocal(ev.until) : '';
+    f.querySelector('[name=evStartDate]').value = ev ? toDatePart(ev.from)  : '';
+    f.querySelector('[name=evStartTime]').value = ev ? toTimePart(ev.from)  : '';
+    f.querySelector('[name=evEndDate]').value   = ev ? toDatePart(ev.until) : '';
+    f.querySelector('[name=evEndTime]').value   = ev ? toTimePart(ev.until) : '';
     f.querySelector('[name=evNote]').value  = ev ? (ev.memo || '') : '';
 
     const emoScore = ev ? (ev.emo_score || 0) : 0;
@@ -540,16 +542,21 @@ function closeEventModal() {
 async function handleEventSubmit(e) {
     e.preventDefault();
     const f = eventForm;
-    const title    = f.querySelector('[name=evTitle]').value.trim();
-    const start    = f.querySelector('[name=evStart]').value;
-    const end      = f.querySelector('[name=evEnd]').value;
-    const note     = f.querySelector('[name=evNote]').value.trim();
-    const emoScore = parseInt(f.querySelector('[name=emo_score]').value) || 0;
+    const title     = f.querySelector('[name=evTitle]').value.trim();
+    const startDate = f.querySelector('[name=evStartDate]').value;
+    const startTime = f.querySelector('[name=evStartTime]').value;
+    const endDate   = f.querySelector('[name=evEndDate]').value;
+    const endTime   = f.querySelector('[name=evEndTime]').value;
+    const note      = f.querySelector('[name=evNote]').value.trim();
+    const emoScore  = parseInt(f.querySelector('[name=emo_score]').value) || 0;
 
-    if (!start || !end) {
-        alert('開始・終了日時は必須です');
+    if (!startDate || !startTime || !endDate || !endTime) {
+        alert('開始・終了の日付と時刻は必須です');
         return;
     }
+
+    const start = startDate + 'T' + startTime;
+    const end   = endDate   + 'T' + endTime;
 
     const submitBtn = f.querySelector('[type=submit]');
     submitBtn.disabled = true;
@@ -558,7 +565,7 @@ async function handleEventSubmit(e) {
     try {
         if (currentEvent) {
             // updateEvent.php: startDateTime/endDateTime "YYYY-MM-DDTHH:MM:SS"
-            await apiPost('../updateEvent.php', {
+            const updatePayload = {
                 eventId:       currentEvent.eventId,
                 calendarId:    currentEvent.calendarId,
                 title,
@@ -566,7 +573,9 @@ async function handleEventSubmit(e) {
                 endDateTime:   end   + ':00',
                 note,
                 emo_score:     emoScore,
-            });
+            };
+            console.log('[updateEvent] payload:', updatePayload);
+            await apiPost('../updateEvent.php', updatePayload);
         } else {
             // createEvent.php: start/end ISO形式 "YYYY-MM-DDTHH:MM:SS+09:00"
             await apiPost('../createEvent.php', {
@@ -600,9 +609,15 @@ function fmtDt(str) {
     } catch (_) { return str; }
 }
 
-// "2026-03-30 10:00:00" → "2026-03-30T10:00" (datetime-local input 用)
-function toDatetimeLocal(str) {
+// "2026-03-30 10:00:00" → "2026-03-30"
+function toDatePart(str) {
+    if (!str) return '';
+    return str.substring(0, 10);
+}
+
+// "2026-03-30 10:00:00" → "10:00"
+function toTimePart(str) {
     if (!str) return '';
     const s = str.replace(' ', 'T');
-    return s.length >= 16 ? s.substring(0, 16) : '';
+    return s.length >= 16 ? s.substring(11, 16) : '';
 }
