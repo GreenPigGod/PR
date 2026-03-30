@@ -8,31 +8,106 @@
   <script src="main.js" defer></script>
 </head>
 <body>
-  <header class="site-header">
-    <span class="site-title">PRアプリ Web版</span>
-    <div id="headerActions" class="header-actions" hidden>
-      <button id="syncBtn"   class="btn">再読み込み</button>
-      <button id="logoutBtn" class="btn btn-danger">ログアウト</button>
+<header class="site-header">
+  <span class="site-title">PRアプリ Web版</span>
+  <div id="headerActions" class="header-actions" hidden>
+    <button id="newTaskBtn" class="btn btn-primary" type="button">＋ タスク追加</button>
+    <button id="syncBtn"    class="btn"             type="button">再読み込み</button>
+    <button id="logoutBtn"  class="btn btn-danger"  type="button">ログアウト</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- ログインセクション -->
+  <section id="loginSection" class="card">
+    <h2>ログイン</h2>
+    <p>LINE WORKS アカウントでログインしてください。</p>
+    <a href="oauth_login.php" class="btn btn-primary">LINE WORKS でログイン</a>
+  </section>
+
+  <!-- メインセクション -->
+  <section id="mainSection" hidden>
+    <p id="status" class="status"></p>
+    <div id="categories" class="categories"></div>
+  </section>
+</main>
+
+<!-- タスクモーダル -->
+<div id="taskModal" class="modal-backdrop" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="taskModalTitle">タスクを作成</h3>
+      <button id="taskModalClose" class="modal-close" type="button">✕</button>
     </div>
-  </header>
+    <form id="taskForm" class="modal-form">
+      <label class="form-label">顧客名 <span class="required">*</span>
+        <input type="text" name="customer" class="form-input" placeholder="例: 田中商事" autocomplete="off">
+      </label>
+      <label class="form-label">用件 <span class="required">*</span>
+        <input type="text" name="requirement" class="form-input" placeholder="例: 見積もり対応" autocomplete="off">
+      </label>
+      <label class="form-label">メモ
+        <textarea name="note" class="form-input form-textarea" placeholder="内容・メモ" rows="3"></textarea>
+      </label>
+      <label class="form-label">期限
+        <input type="date" name="dueDate" class="form-input">
+      </label>
+      <label class="form-label">カテゴリ
+        <select name="category" class="form-input form-select">
+          <option>商談</option>
+          <option>修理</option>
+          <option>巡回</option>
+          <option>その他</option>
+        </select>
+      </label>
+      <label class="form-label">受注番号
+        <input type="text" name="juchu_num" class="form-input" placeholder="受注番号" autocomplete="off">
+      </label>
+      <div class="modal-footer">
+        <button type="button" id="taskCancelBtn" class="btn">キャンセル</button>
+        <button type="submit" class="btn btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-  <main class="wrap">
-    <!-- ログインセクション -->
-    <section id="loginSection" class="card">
-      <h2>ログイン</h2>
-      <p>LINE WORKS アカウントでログインしてください。</p>
-      <a href="oauth_login.php" class="btn btn-primary">LINE WORKS でログイン</a>
-    </section>
-
-    <!-- メインセクション -->
-    <section id="mainSection" hidden>
-      <p id="status" class="status"></p>
-      <div id="categories" class="categories"></div>
-    </section>
-  </main>
+<!-- 予定モーダル -->
+<div id="eventModal" class="modal-backdrop" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="eventModalTitle">予定を追加</h3>
+      <button id="eventModalClose" class="modal-close" type="button">✕</button>
+    </div>
+    <form id="eventForm" class="modal-form">
+      <label class="form-label">タイトル
+        <input type="text" name="evTitle" class="form-input" placeholder="予定のタイトル">
+      </label>
+      <label class="form-label">開始日時 <span class="required">*</span>
+        <input type="datetime-local" name="evStart" class="form-input">
+      </label>
+      <label class="form-label">終了日時 <span class="required">*</span>
+        <input type="datetime-local" name="evEnd" class="form-input">
+      </label>
+      <label class="form-label">メモ
+        <textarea name="evNote" class="form-input form-textarea" rows="2"></textarea>
+      </label>
+      <label class="form-label">気持ち
+        <div class="emo-group">
+          <button type="button" class="emo-btn" data-score="1">😢</button>
+          <button type="button" class="emo-btn" data-score="2">😞</button>
+          <button type="button" class="emo-btn" data-score="3">😐</button>
+          <button type="button" class="emo-btn" data-score="4">😊</button>
+          <button type="button" class="emo-btn" data-score="5">❤️</button>
+        </div>
+        <input type="hidden" name="emo_score" value="0">
+      </label>
+      <div class="modal-footer">
+        <button type="button" id="eventCancelBtn" class="btn">キャンセル</button>
+        <button type="submit" class="btn btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 </body>
 </html>
-
-
-

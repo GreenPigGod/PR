@@ -1,17 +1,13 @@
 // main.js
-
 'use strict';
 
 // ── 定数 ─────────────────────────────────────────
-const API         = '';             // forUsers/ 基準の相対パス
 const SESSION_KEY = 'app_session';
-const MOCK_MODE   = false;          // true にするとモックデータで動作（認証不要）
+const MOCK_MODE   = false;
+const CATEGORIES  = ['商談', '修理', '巡回', 'その他'];
 
 // ── セッション ────────────────────────────────────
-function getSession() {
-    return localStorage.getItem(SESSION_KEY) || '';
-}
-
+function getSession() { return localStorage.getItem(SESSION_KEY) || ''; }
 function authHeaders() {
     return {
         'Content-Type': 'application/json',
@@ -21,13 +17,13 @@ function authHeaders() {
 
 // ── API 共通 ──────────────────────────────────────
 async function apiFetch(path, options = {}) {
-    const res = await fetch(API + path, {
+    const res = await fetch(path, {
         ...options,
         headers: { ...authHeaders(), ...(options.headers || {}) },
     });
     const text = await res.text();
     if (!res.ok) {
-        let msg = `HTTP ${res.status}`;
+        let msg = 'HTTP ' + res.status;
         try { msg = JSON.parse(text).error || msg; } catch (_) {}
         throw new Error(msg);
     }
@@ -38,25 +34,53 @@ async function apiPost(path, body) {
     return apiFetch(path, { method: 'POST', body: JSON.stringify(body) });
 }
 
-
 // ── アプリ状態 ────────────────────────────────────
-let appData = null; // { categories: [...], incompleteEvents: [...] }
+let appData = null;
 
 // ── DOM 参照 ──────────────────────────────────────
-let loginSection, mainSection, headerActions, categoriesEl, statusEl, syncBtn, logoutBtn;
+let loginSection, mainSection, headerActions, categoriesEl, statusEl, syncBtn, logoutBtn, newTaskBtn;
+let taskModal, taskModalTitle, taskForm;
+let eventModal, eventModalTitle, eventForm;
 
 // ── 初期化 ────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    loginSection  = document.getElementById('loginSection');
-    mainSection   = document.getElementById('mainSection');
-    headerActions = document.getElementById('headerActions');
-    categoriesEl  = document.getElementById('categories');
-    statusEl      = document.getElementById('status');
-    syncBtn       = document.getElementById('syncBtn');
-    logoutBtn     = document.getElementById('logoutBtn');
+    loginSection    = document.getElementById('loginSection');
+    mainSection     = document.getElementById('mainSection');
+    headerActions   = document.getElementById('headerActions');
+    categoriesEl    = document.getElementById('categories');
+    statusEl        = document.getElementById('status');
+    syncBtn         = document.getElementById('syncBtn');
+    logoutBtn       = document.getElementById('logoutBtn');
+    newTaskBtn      = document.getElementById('newTaskBtn');
+    taskModal       = document.getElementById('taskModal');
+    taskModalTitle  = document.getElementById('taskModalTitle');
+    taskForm        = document.getElementById('taskForm');
+    eventModal      = document.getElementById('eventModal');
+    eventModalTitle = document.getElementById('eventModalTitle');
+    eventForm       = document.getElementById('eventForm');
 
     syncBtn.addEventListener('click', loadData);
     logoutBtn.addEventListener('click', doLogout);
+    newTaskBtn.addEventListener('click', () => openTaskModal(null, null));
+
+    document.getElementById('taskModalClose').addEventListener('click', closeTaskModal);
+    document.getElementById('taskCancelBtn').addEventListener('click', closeTaskModal);
+    taskModal.addEventListener('click', e => { if (e.target === taskModal) closeTaskModal(); });
+    taskForm.addEventListener('submit', handleTaskSubmit);
+
+    document.getElementById('eventModalClose').addEventListener('click', closeEventModal);
+    document.getElementById('eventCancelBtn').addEventListener('click', closeEventModal);
+    eventModal.addEventListener('click', e => { if (e.target === eventModal) closeEventModal(); });
+    eventForm.addEventListener('submit', handleEventSubmit);
+
+    // 気持ちボタン
+    eventForm.querySelectorAll('.emo-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            eventForm.querySelectorAll('.emo-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            eventForm.querySelector('[name=emo_score]').value = btn.dataset.score;
+        });
+    });
 
     if (MOCK_MODE || getSession()) {
         showMain();
@@ -66,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// ── 表示切替 ──────────────────────────────────────
 function showLogin() {
     loginSection.removeAttribute('hidden');
     mainSection.setAttribute('hidden', '');
@@ -78,6 +103,7 @@ function showMain() {
     headerActions.removeAttribute('hidden');
 }
 
+// ── ログアウト ────────────────────────────────────
 async function doLogout() {
     try { await apiPost('api/logout.php', {}); } catch (_) {}
     localStorage.removeItem(SESSION_KEY);
@@ -105,17 +131,27 @@ async function loadData() {
     }
 }
 
-function setStatus(msg) {
-    statusEl.textContent = msg;
-}
+function setStatus(msg) { statusEl.textContent = msg; }
 
 // ── 描画 ──────────────────────────────────────────
 function renderAll(data) {
     categoriesEl.innerHTML = '';
 
+    const completedTasks = [];
+
     (data.categories || []).forEach(cat => {
-        categoriesEl.appendChild(buildCategoryEl(cat));
+        const incompleteTasks = (cat.tasks || []).filter(t => t.completed !== 'DONE');
+        const doneTasks       = (cat.tasks || []).filter(t => t.completed === 'DONE');
+        doneTasks.forEach(t => completedTasks.push({ task: t, cat }));
+
+        if (incompleteTasks.length > 0) {
+            categoriesEl.appendChild(buildCategoryEl({ ...cat, tasks: incompleteTasks }));
+        }
     });
+
+    if (completedTasks.length > 0) {
+        categoriesEl.appendChild(buildCompletedSectionEl(completedTasks));
+    }
 
     const incomplete = data.incompleteEvents || [];
     if (incomplete.length > 0) {
@@ -127,10 +163,8 @@ function buildCategoryEl(cat) {
     const wrap = document.createElement('div');
     wrap.className = 'category';
 
-    // ヘッダー（折りたたみ）
     const header = document.createElement('div');
     header.className = 'category-header';
-    header.innerHTML = '';
 
     const left = document.createElement('div');
     left.className = 'category-header-left';
@@ -151,17 +185,15 @@ function buildCategoryEl(cat) {
     header.appendChild(left);
     wrap.appendChild(header);
 
-    // ボディ
     const body = document.createElement('div');
     body.className = 'category-body';
 
     const taskList = document.createElement('div');
     taskList.className = 'task-list';
-    (cat.tasks || []).forEach(task => taskList.appendChild(buildTaskEl(task)));
+    (cat.tasks || []).forEach(task => taskList.appendChild(buildTaskEl(task, cat)));
     body.appendChild(taskList);
     wrap.appendChild(body);
 
-    // 折りたたみ toggle
     header.addEventListener('click', () => {
         const open = body.classList.toggle('open');
         chevron.textContent = open ? '▼' : '▶';
@@ -170,16 +202,23 @@ function buildCategoryEl(cat) {
     return wrap;
 }
 
-function buildTaskEl(task) {
+function buildTaskEl(task, cat) {
     const wrap = document.createElement('div');
     wrap.className = 'task-item' + (task.completed === 'DONE' ? ' done' : '');
 
     const header = document.createElement('div');
     header.className = 'task-header';
 
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'task-checkbox';
+    checkbox.checked = task.completed === 'DONE';
+    checkbox.addEventListener('change', () => toggleComplete(task, checkbox.checked));
+
     const nameEl = document.createElement('span');
-    nameEl.className = 'task-name';
+    nameEl.className = 'task-name task-name-link';
     nameEl.textContent = task.taskName || '';
+    nameEl.addEventListener('click', () => openTaskModal(task, cat));
 
     const meta = document.createElement('div');
     meta.className = 'task-meta-row';
@@ -197,6 +236,7 @@ function buildTaskEl(task) {
 
     const evs = task.events || [];
     const evToggle = document.createElement('button');
+    evToggle.type = 'button';
     evToggle.className = 'btn btn-sm btn-events-toggle';
     evToggle.textContent = '予定 (' + evs.length + ')';
 
@@ -204,7 +244,7 @@ function buildTaskEl(task) {
     actions.className = 'task-actions';
     actions.appendChild(evToggle);
 
-    header.append(nameWrap, actions);
+    header.append(checkbox, nameWrap, actions);
     wrap.appendChild(header);
 
     // 予定セクション（折りたたみ）
@@ -214,8 +254,15 @@ function buildTaskEl(task) {
 
     const evList = document.createElement('div');
     evList.className = 'event-list';
-    evs.forEach(ev => evList.appendChild(buildEventEl(ev)));
+    evs.forEach(ev => evList.appendChild(buildEventEl(ev, task)));
     evSection.appendChild(evList);
+
+    const addEvBtn = document.createElement('button');
+    addEvBtn.type = 'button';
+    addEvBtn.className = 'btn btn-sm btn-add-event';
+    addEvBtn.textContent = '＋ 予定追加';
+    addEvBtn.addEventListener('click', () => openEventModal(null, task));
+    evSection.appendChild(addEvBtn);
 
     evToggle.addEventListener('click', () => {
         const isHidden = evSection.hasAttribute('hidden');
@@ -229,13 +276,12 @@ function buildTaskEl(task) {
     });
 
     wrap.appendChild(evSection);
-
     return wrap;
 }
 
-function buildEventEl(ev) {
+function buildEventEl(ev, task) {
     const row = document.createElement('div');
-    row.className = 'event-row';
+    row.className = 'event-row event-row-clickable';
 
     const info = document.createElement('div');
     info.className = 'event-info';
@@ -258,6 +304,7 @@ function buildEventEl(ev) {
     }
 
     row.appendChild(info);
+    row.addEventListener('click', () => openEventModal(ev, task));
     return row;
 }
 
@@ -292,9 +339,7 @@ function buildIncompleteSectionEl(events) {
 
     const evList = document.createElement('div');
     evList.className = 'event-list';
-
-    events.forEach(ev => evList.appendChild(buildEventEl(ev)));
-
+    events.forEach(ev => evList.appendChild(buildEventEl(ev, null)));
     body.appendChild(evList);
     wrap.appendChild(body);
 
@@ -306,19 +351,258 @@ function buildIncompleteSectionEl(events) {
     return wrap;
 }
 
-// ── ユーティリティ ─────────────────────────────────
-function pad(n) {
-    return String(n).padStart(2, '0');
+// ── 完了済みセクション ────────────────────────────
+function buildCompletedSectionEl(completedTasks) {
+    const wrap = document.createElement('div');
+    wrap.className = 'category category-completed';
+
+    const header = document.createElement('div');
+    header.className = 'category-header';
+
+    const left = document.createElement('div');
+    left.className = 'category-header-left';
+
+    const chevron = document.createElement('span');
+    chevron.className = 'chevron';
+    chevron.textContent = '▶';
+
+    const name = document.createElement('span');
+    name.className = 'category-name';
+    name.textContent = '完了済みのタスク';
+
+    const count = document.createElement('span');
+    count.className = 'category-count';
+    count.textContent = completedTasks.length + '件';
+
+    left.append(chevron, name, count);
+    header.appendChild(left);
+    wrap.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'category-body';
+
+    const taskList = document.createElement('div');
+    taskList.className = 'task-list';
+    completedTasks.forEach(({ task, cat }) => taskList.appendChild(buildTaskEl(task, cat)));
+    body.appendChild(taskList);
+    wrap.appendChild(body);
+
+    header.addEventListener('click', () => {
+        const open = body.classList.toggle('open');
+        chevron.textContent = open ? '▼' : '▶';
+    });
+
+    return wrap;
 }
+
+// ── 完了トグル ────────────────────────────────────
+async function toggleComplete(task, isDone) {
+    try {
+        await apiPost('../setTaskCompletion.php', {
+            taskId:    task.taskId,
+            completed: isDone,
+        });
+        await loadData();
+    } catch (err) {
+        alert('エラー: ' + err.message);
+    }
+}
+
+// ── タスクモーダル ────────────────────────────────
+let currentTask = null;
+let currentCat  = null;
+
+function openTaskModal(task, cat) {
+    currentTask = task;
+    currentCat  = cat;
+    taskModalTitle.textContent = task ? 'タスクを編集' : 'タスクを作成';
+
+    let customer = '', requirement = '', note = '', dueDate = '', category = 'その他', juchuNum = '';
+
+    if (task) {
+        const parts = (task.taskName || '').split('@');
+        customer    = parts[0] || '';
+        requirement = parts.slice(1).join('@') || '';
+        note        = task.content || '';
+        dueDate     = task.deadline || '';
+        category    = cat ? (cat.categoryName || 'その他') : 'その他';
+        juchuNum    = task.juchuNum || '';
+    }
+
+    const f = taskForm;
+    f.querySelector('[name=customer]').value    = customer;
+    f.querySelector('[name=requirement]').value = requirement;
+    f.querySelector('[name=note]').value        = note;
+    f.querySelector('[name=dueDate]').value     = dueDate;
+    f.querySelector('[name=juchu_num]').value   = juchuNum;
+
+    // カテゴリ: プリセット外の値は先頭に動的追加
+    const sel = f.querySelector('[name=category]');
+    sel.querySelectorAll('[data-dynamic]').forEach(o => o.remove());
+    if (category && !CATEGORIES.includes(category)) {
+        const opt = document.createElement('option');
+        opt.value = category;
+        opt.textContent = category;
+        opt.dataset.dynamic = '1';
+        sel.insertBefore(opt, sel.firstChild);
+    }
+    sel.value = category;
+
+    taskModal.removeAttribute('hidden');
+    f.querySelector('[name=customer]').focus();
+}
+
+function closeTaskModal() {
+    taskModal.setAttribute('hidden', '');
+    currentTask = null;
+    currentCat  = null;
+}
+
+async function handleTaskSubmit(e) {
+    e.preventDefault();
+    const f = taskForm;
+    const customer    = f.querySelector('[name=customer]').value.trim();
+    const requirement = f.querySelector('[name=requirement]').value.trim();
+    const note        = f.querySelector('[name=note]').value.trim();
+    const dueDate     = f.querySelector('[name=dueDate]').value || null;
+    const category    = f.querySelector('[name=category]').value;
+    const juchuNum    = f.querySelector('[name=juchu_num]').value.trim();
+
+    if (!customer || !requirement) {
+        alert('顧客名と用件は必須です');
+        return;
+    }
+
+    const title = customer + '@' + requirement;
+    const submitBtn = f.querySelector('[type=submit]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '送信中…';
+
+    try {
+        if (currentTask) {
+            await apiPost('../updateTask.php', {
+                taskId:    currentTask.taskId,
+                title,
+                content:   note || title,
+                dueDate,
+                category,
+                juchu_num: juchuNum,
+            });
+        } else {
+            await apiPost('../createTask.php', {
+                title,
+                content:   note || title,
+                dueDate,
+                category,
+                juchu_num: juchuNum,
+            });
+        }
+        closeTaskModal();
+        await loadData();
+    } catch (err) {
+        alert('エラー: ' + err.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '保存';
+    }
+}
+
+// ── 予定モーダル ──────────────────────────────────
+let currentEvent     = null;
+let currentEventTask = null;
+
+function openEventModal(ev, task) {
+    currentEvent     = ev;
+    currentEventTask = task;
+    eventModalTitle.textContent = ev ? '予定を編集' : '予定を追加';
+
+    const f = eventForm;
+    f.querySelector('[name=evTitle]').value = ev ? ev.title : (task ? task.taskName : '');
+    f.querySelector('[name=evStart]').value = ev ? toDatetimeLocal(ev.from)  : '';
+    f.querySelector('[name=evEnd]').value   = ev ? toDatetimeLocal(ev.until) : '';
+    f.querySelector('[name=evNote]').value  = ev ? (ev.memo || '') : '';
+
+    const emoScore = ev ? (ev.emo_score || 0) : 0;
+    f.querySelector('[name=emo_score]').value = emoScore;
+    f.querySelectorAll('.emo-btn').forEach(btn => {
+        btn.classList.toggle('selected', parseInt(btn.dataset.score) === emoScore);
+    });
+
+    eventModal.removeAttribute('hidden');
+}
+
+function closeEventModal() {
+    eventModal.setAttribute('hidden', '');
+    currentEvent     = null;
+    currentEventTask = null;
+}
+
+async function handleEventSubmit(e) {
+    e.preventDefault();
+    const f = eventForm;
+    const title    = f.querySelector('[name=evTitle]').value.trim();
+    const start    = f.querySelector('[name=evStart]').value;
+    const end      = f.querySelector('[name=evEnd]').value;
+    const note     = f.querySelector('[name=evNote]').value.trim();
+    const emoScore = parseInt(f.querySelector('[name=emo_score]').value) || 0;
+
+    if (!start || !end) {
+        alert('開始・終了日時は必須です');
+        return;
+    }
+
+    const submitBtn = f.querySelector('[type=submit]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '送信中…';
+
+    try {
+        if (currentEvent) {
+            // updateEvent.php: startDateTime/endDateTime "YYYY-MM-DDTHH:MM:SS"
+            await apiPost('../updateEvent.php', {
+                eventId:       currentEvent.eventId,
+                calendarId:    currentEvent.calendarId,
+                title,
+                startDateTime: start + ':00',
+                endDateTime:   end   + ':00',
+                note,
+                emo_score:     emoScore,
+            });
+        } else {
+            // createEvent.php: start/end ISO形式 "YYYY-MM-DDTHH:MM:SS+09:00"
+            await apiPost('../createEvent.php', {
+                title,
+                start:  start + ':00+09:00',
+                end:    end   + ':00+09:00',
+                note,
+                taskId: currentEventTask ? currentEventTask.taskId : null,
+            });
+        }
+        closeEventModal();
+        await loadData();
+    } catch (err) {
+        alert('エラー: ' + err.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '保存';
+    }
+}
+
+// ── ユーティリティ ─────────────────────────────────
+function pad(n) { return String(n).padStart(2, '0'); }
 
 function fmtDt(str) {
     if (!str) return '';
     try {
-        const d = new Date(str);
+        const d = new Date(str.replace(' ', 'T'));
         if (isNaN(d.getTime())) return str;
         return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate())
              + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     } catch (_) { return str; }
 }
 
-
+// "2026-03-30 10:00:00" → "2026-03-30T10:00" (datetime-local input 用)
+function toDatetimeLocal(str) {
+    if (!str) return '';
+    const s = str.replace(' ', 'T');
+    return s.length >= 16 ? s.substring(0, 16) : '';
+}

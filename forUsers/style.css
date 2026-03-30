@@ -285,3 +285,154 @@ body {
 .event-title { font-size: 12px; font-weight: 500; }
 .event-time  { font-size: 11px; color: #888; }
 .event-memo  { font-size: 11px; color: #666; }
+
+/* ── プライマリボタン ────────────────────────── */
+.btn-primary { background: #22c55e; border-color: #22c55e; color: #fff; }
+.btn-primary:hover { background: #16a34a; border-color: #16a34a; color: #fff; }
+
+.site-header .btn-primary { background: #22c55e; border-color: #22c55e; color: #fff; }
+.site-header .btn-primary:hover { background: #16a34a; border-color: #16a34a; color: #fff; }
+
+/* ── タスク名クリック ────────────────────────── */
+.task-name-link { cursor: pointer; }
+.task-name-link:hover { text-decoration: underline; color: #22c55e; }
+
+/* ── 予定行クリック ─────────────────────────── */
+.event-row-clickable { cursor: pointer; }
+.event-row-clickable:hover { background: #222; }
+
+/* ── 予定追加ボタン ─────────────────────────── */
+.btn-add-event {
+  display: block;
+  margin: 6px 10px 4px;
+  color: #22c55e;
+  border-color: #22c55e;
+  background: transparent;
+}
+.btn-add-event:hover { background: #0f2d1a; }
+
+/* ── モーダル ─────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+
+.modal {
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, .6);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #2a2a2a;
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #f0f0f0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 4px;
+}
+.modal-close:hover { background: #2a2a2a; color: #f0f0f0; }
+
+.modal-form {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+/* ── フォーム部品 ────────────────────────────── */
+.form-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #aaa;
+}
+.required { color: #f87171; }
+
+.form-input {
+  background: #141414;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #f0f0f0;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 7px 10px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color .12s;
+}
+.form-input:focus { border-color: #22c55e; }
+.form-input[readonly] { color: #888; cursor: default; }
+
+.form-textarea { resize: vertical; min-height: 60px; }
+.form-select   { cursor: pointer; }
+
+/* ── 気持ちボタン ────────────────────────────── */
+.emo-group { display: flex; gap: 6px; margin-top: 2px; }
+
+.emo-btn {
+  font-size: 20px;
+  background: #141414;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: border-color .12s, background .12s;
+  line-height: 1.4;
+}
+.emo-btn:hover   { background: #2a2a2a; border-color: #555; }
+.emo-btn.selected { border-color: #22c55e; background: #0f2d1a; }
+
+/* ── タスクチェックボックス ──────────────────────── */
+.task-checkbox {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 2px 10px 0 0;
+  cursor: pointer;
+  accent-color: #22c55e;
+}
+
+/* ── 完了済みセクション ─────────────────────────── */
+.category-completed > .category-header {
+  background: #e8e8e8;
+  color: #555;
+}
+.category-completed .task-item { opacity: .5; }
+.category-completed .task-name { text-decoration: line-through; }
