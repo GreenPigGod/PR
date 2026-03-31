@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>プライバシーポリシー - PRアプリ</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>プライバシーポリシー</h1>
+  <p>PRアプリ &nbsp;|&nbsp; 最終更新日：2026年3月31日</p>
+</header>
+
+<main>
+
+  <section>
+    <h2>1. はじめに</h2>
+    <p>
+      本プライバシーポリシーは、個人が趣味の範囲で開発・運用するAndroidアプリケーション「PRアプリ」（以下「本アプリ」）における、
+      利用者の情報の取り扱いについて説明するものです。
+    </p>
+    <p>
+      本アプリは個人の趣味・自己利用を目的として作成されており、商業目的での第三者への情報提供は行いません。
+    </p>
+  </section>
+
+  <section>
+    <h2>2. 収集する情報</h2>
+    <p>本アプリは以下の情報を端末内およびサーバー上に保存・同期します。</p>
+    <ul>
+      <li><strong>タスク情報：</strong>タスク名、カテゴリ、期限、完了状態、内容、受注番号</li>
+      <li><strong>カテゴリ情報：</strong>カテゴリID、カテゴリ名</li>
+      <li><strong>予定・イベント情報：</strong>タイトル、開始日時、終了日時、メモ、感情スコア（emo_score）</li>
+      <li><strong>顧客情報：</strong>顧客ID、顧客名（CustomerList.csvから読み込む一覧）</li>
+      <li><strong>認証情報：</strong>OAuthによるセッショントークン（Bearerトークン）</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. 情報の利用目的</h2>
+    <p>収集した情報は以下の目的にのみ使用します。</p>
+    <ul>
+      <li>タスク・予定の管理機能を提供するため</li>
+      <li>サーバー（<code>nansyungijutsu.com/pr</code>）との同期処理を行うため</li>
+      <li>OAuth認証によりアプリへのアクセスを管理するため</li>
+      <li>個人の趣味・自己利用の範囲でのデータ活用・分析（感情スコアの記録など）のため</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. 個人の趣味の範囲での利用について</h2>
+    <p>
+      本アプリおよびアプリが収集するデータは、開発者個人が趣味の範囲で活用することがあります。
+      具体的には、タスクの傾向分析、感情スコアの推移の把握、業務効率の自己評価などを個人的な目的で実施する場合があります。
+    </p>
+    <p>
+      これらの活用は開発者本人による自己利用に限定され、第三者への開示・販売・提供は行いません。
+    </p>
+  </section>
+
+  <section>
+    <h2>5. 情報の保存場所</h2>
+    <ul>
+      <li><strong>端末内：</strong>Room データベース（<code>pr_tasks.db</code>）にローカル保存されます。</li>
+      <li><strong>サーバー：</strong><code>https://nansyungijutsu.com/pr</code> に同期されます。サーバーは開発者が管理する個人サーバーです。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6. 第三者への情報提供</h2>
+    <p>
+      取得した情報を、法令に基づく場合を除き、本人の同意なく第三者に提供・開示・販売することはありません。
+    </p>
+  </section>
+
+  <section>
+    <h2>7. 使用するパーミッション</h2>
+    <ul>
+      <li><strong>INTERNET：</strong>サーバーとのデータ同期およびOAuth認証のために使用します。</li>
+    </ul>
+    <p>位置情報・カメラ・連絡先など、上記以外のパーミッションは使用しません。</p>
+  </section>
+
+  <section>
+    <h2>8. セキュリティ</h2>
+    <p>
+      認証にはOAuth 2.0を採用し、Bearerトークンによる通信を行います。
+      ただし、本アプリは個人開発のため、商用グレードのセキュリティ対策をすべて保証するものではありません。
+    </p>
+  </section>
+
+  <section>
+    <h2>9. 本ポリシーの変更</h2>
+    <p>
+      本ポリシーは必要に応じて改訂することがあります。重要な変更がある場合は、本ページにて告知します。
+    </p>
+  </section>
+
+  <section>
+    <h2>10. お問い合わせ</h2>
+    <p>
+      本アプリのプライバシーポリシーに関するご質問は、サイト管理者（NobuakiTanaka）までお問い合わせください。
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <p>&copy; 2026 NobuakiTanaka. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

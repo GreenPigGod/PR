@@ -17,7 +17,7 @@ $tz = new DateTimeZone('Asia/Tokyo');
 
 // ---------- LINE WORKS API fetch ----------
 
-function fetch_lw_categories(array $sess, string $userId): array {
+function fetch_pr_categories(array $sess, string $userId): array {
     [$st, , $json] = works_api($sess, 'GET', "/users/{$userId}/task-categories", ['count' => 100], null);
     if ($st < 200 || $st >= 300 || !is_array($json)) return [];
     $cats = $json['categories'] ?? $json['taskCategories'] ?? [];
@@ -32,7 +32,7 @@ function fetch_lw_categories(array $sess, string $userId): array {
     return $out;
 }
 
-function fetch_lw_tasks(array $sess, string $userId, string $categoryId): array {
+function fetch_pr_tasks(array $sess, string $userId, string $categoryId): array {
     $all    = [];
     $cursor = null;
     do {
@@ -74,7 +74,7 @@ function fetch_lw_calendar_ids(array $sess, string $userId): array {
     return $out;
 }
 
-function fetch_lw_events_range(array $sess, string $userId, string $calendarId, DateTimeImmutable $from, DateTimeImmutable $until): array {
+function fetch_pr_events_range(array $sess, string $userId, string $calendarId, DateTimeImmutable $from, DateTimeImmutable $until): array {
     $out    = [];
     $cursor = null;
     do {
@@ -115,7 +115,7 @@ function fetch_lw_events_range(array $sess, string $userId, string $calendarId, 
 
 function lw_upsert_category(PDO $pdo, string $userId, string $catId, string $catName, int $sort): void {
     $pdo->prepare(
-        "INSERT INTO lw_categories (lw_user_id, category_id, category_name, sort_order)
+        "INSERT INTO pr_categories (lw_user_id, category_id, category_name, sort_order)
          VALUES (:uid,:cid,:cname,:sort)
          ON DUPLICATE KEY UPDATE category_name=VALUES(category_name), sort_order=VALUES(sort_order), updated_at=CURRENT_TIMESTAMP"
     )->execute([':uid' => $userId, ':cid' => $catId, ':cname' => $catName, ':sort' => $sort]);
@@ -129,7 +129,7 @@ function lw_upsert_task(PDO $pdo, string $userId, string $taskId, string $catId,
     }
     $completed = match ($status) { 'DONE' => 'DONE', 'TODO' => 'TODO', default => 'NOT_STARTED' };
     $pdo->prepare(
-        "INSERT INTO lw_tasks (lw_user_id, task_id, category_id, task_name, deadline, completed, content)
+        "INSERT INTO pr_tasks (lw_user_id, task_id, category_id, task_name, deadline, completed, content)
          VALUES (:uid,:tid,:cid,:tname,:deadline,:completed,:content)
          ON DUPLICATE KEY UPDATE
            category_id=VALUES(category_id), task_name=VALUES(task_name),
@@ -143,7 +143,7 @@ function lw_upsert_event(PDO $pdo, string $userId, string $evId, string $calId, 
     $startFmt = (new DateTime($startAt))->setTimezone($tz)->format('Y-m-d H:i:s');
     $endFmt   = (new DateTime($endAt))->setTimezone($tz)->format('Y-m-d H:i:s');
     $pdo->prepare(
-        "INSERT INTO lw_events (lw_user_id, event_id, calendar_id, task_id, title, start_at, end_at, memo, deleted)
+        "INSERT INTO pr_events (lw_user_id, event_id, calendar_id, task_id, title, start_at, end_at, memo, deleted)
          VALUES (:uid,:eid,:calid,NULL,:title,:start,:end,:memo,0)
          ON DUPLICATE KEY UPDATE
            calendar_id=VALUES(calendar_id), title=VALUES(title), start_at=VALUES(start_at), end_at=VALUES(end_at), memo=VALUES(memo), deleted=0"
@@ -152,29 +152,29 @@ function lw_upsert_event(PDO $pdo, string $userId, string $evId, string $calId, 
 
 function lw_mark_deleted_tasks(PDO $pdo, string $userId, array $ids): void {
     if (empty($ids)) {
-        $pdo->prepare("UPDATE lw_tasks SET deleted=1 WHERE lw_user_id=:uid AND deleted=0")->execute([':uid' => $userId]);
+        $pdo->prepare("UPDATE pr_tasks SET deleted=1 WHERE lw_user_id=:uid AND deleted=0")->execute([':uid' => $userId]);
         return;
     }
     $ph = implode(',', array_fill(0, count($ids), '?'));
-    $pdo->prepare("UPDATE lw_tasks SET deleted=1 WHERE lw_user_id=? AND task_id NOT IN ({$ph}) AND deleted=0")
+    $pdo->prepare("UPDATE pr_tasks SET deleted=1 WHERE lw_user_id=? AND task_id NOT IN ({$ph}) AND deleted=0")
         ->execute(array_merge([$userId], $ids));
 }
 
 function lw_mark_deleted_events(PDO $pdo, string $userId, array $ids, string $fromDt, string $untilDt): void {
     if (empty($ids)) {
-        $pdo->prepare("UPDATE lw_events SET deleted=1 WHERE lw_user_id=:uid AND start_at>=:from AND start_at<:until AND deleted=0")
+        $pdo->prepare("UPDATE pr_events SET deleted=1 WHERE lw_user_id=:uid AND start_at>=:from AND start_at<:until AND deleted=0")
             ->execute([':uid' => $userId, ':from' => $fromDt, ':until' => $untilDt]);
         return;
     }
     $ph = implode(',', array_fill(0, count($ids), '?'));
-    $pdo->prepare("UPDATE lw_events SET deleted=1 WHERE lw_user_id=? AND start_at>=? AND start_at<? AND event_id NOT IN ({$ph}) AND deleted=0")
+    $pdo->prepare("UPDATE pr_events SET deleted=1 WHERE lw_user_id=? AND start_at>=? AND start_at<? AND event_id NOT IN ({$ph}) AND deleted=0")
         ->execute(array_merge([$userId, $fromDt, $untilDt], $ids));
 }
 
 // ---------- DB select → response ----------
 
 function lw_build_response(PDO $pdo, string $userId): array {
-    $stmt = $pdo->prepare("SELECT category_id, category_name FROM lw_categories WHERE lw_user_id=:uid ORDER BY sort_order ASC");
+    $stmt = $pdo->prepare("SELECT category_id, category_name FROM pr_categories WHERE lw_user_id=:uid ORDER BY sort_order ASC");
     $stmt->execute([':uid' => $userId]);
     $cats = $stmt->fetchAll();
 
@@ -184,7 +184,7 @@ function lw_build_response(PDO $pdo, string $userId): array {
 
         $stmt2 = $pdo->prepare(
             "SELECT task_id, task_name, deadline, completed, content
-             FROM lw_tasks
+             FROM pr_tasks
              WHERE lw_user_id=:uid AND category_id=:cid AND deleted=0
              ORDER BY task_id ASC"
         );
@@ -195,7 +195,7 @@ function lw_build_response(PDO $pdo, string $userId): array {
         foreach ($tasks as $task) {
             $stmt3 = $pdo->prepare(
                 "SELECT event_id, calendar_id, title, start_at, end_at, memo
-                 FROM lw_events
+                 FROM pr_events
                  WHERE lw_user_id=:uid AND task_id=:tid AND deleted=0
                  ORDER BY start_at ASC"
             );
@@ -233,7 +233,7 @@ function lw_build_response(PDO $pdo, string $userId): array {
 
     $stmt4 = $pdo->prepare(
         "SELECT event_id, calendar_id, title, start_at, end_at, memo
-         FROM lw_events
+         FROM pr_events
          WHERE lw_user_id=:uid AND task_id IS NULL AND deleted=0
          ORDER BY start_at ASC"
     );
@@ -258,13 +258,13 @@ function lw_build_response(PDO $pdo, string $userId): array {
 // ---------- main ----------
 
 // 1. カテゴリ + タスクを取得
-$lwCategories   = fetch_lw_categories($sess, $userId);
+$lwCategories   = fetch_pr_categories($sess, $userId);
 $fetchedTaskIds = [];
 $tasksByCategory = [];
 
 foreach ($lwCategories as $cat) {
     $catId   = $cat['id'];
-    $tasks   = fetch_lw_tasks($sess, $userId, $catId);
+    $tasks   = fetch_pr_tasks($sess, $userId, $catId);
     $tasksByCategory[$catId] = ['name' => $cat['name'], 'tasks' => $tasks];
     foreach ($tasks as $t) { $fetchedTaskIds[] = $t['id']; }
 }
@@ -283,7 +283,7 @@ foreach ($calendarIds as $calId) {
     while ($windowStart < $untilAll) {
         $windowEnd = $windowStart->modify('+30 days');
         if ($windowEnd > $untilAll) $windowEnd = $untilAll;
-        $chunk = fetch_lw_events_range($sess, $userId, $calId, $windowStart, $windowEnd);
+        $chunk = fetch_pr_events_range($sess, $userId, $calId, $windowStart, $windowEnd);
         foreach ($chunk as $e) {
             $fetchedEventIds[] = $e['id'];
             $allEvents[]       = $e;
@@ -295,7 +295,7 @@ foreach ($calendarIds as $calId) {
 // 3. DBに保存
 $pdo->beginTransaction();
 try {
-    $pdo->prepare("INSERT INTO lw_users (lw_user_id) VALUES (:u) ON DUPLICATE KEY UPDATE lw_user_id=lw_user_id")
+    $pdo->prepare("INSERT INTO pr_users (lw_user_id) VALUES (:u) ON DUPLICATE KEY UPDATE lw_user_id=lw_user_id")
         ->execute([':u' => $userId]);
 
     $sort = 0;

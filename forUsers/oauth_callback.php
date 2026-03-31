@@ -100,15 +100,15 @@ if ($lwUserId === '') {
     exit('userId が取得できませんでした');
 }
 
-// 5. DB保存 (Androidと同じ lw_app_sessions を使用)
+// 5. DB保存 (Androidと同じ pr_app_sessions を使用)
 $pdo = pdo_from_cfg($cfg['db']);
 $pdo->beginTransaction();
 
-$pdo->prepare('INSERT INTO lw_users (lw_user_id) VALUES (:u) ON DUPLICATE KEY UPDATE lw_user_id = lw_user_id')
+$pdo->prepare('INSERT INTO pr_users (lw_user_id) VALUES (:u) ON DUPLICATE KEY UPDATE lw_user_id = lw_user_id')
     ->execute([':u' => $lwUserId]);
 
 $userDbId = (int)$pdo->query(
-    'SELECT id FROM lw_users WHERE lw_user_id = ' . $pdo->quote($lwUserId)
+    'SELECT id FROM pr_users WHERE lw_user_id = ' . $pdo->quote($lwUserId)
 )->fetchColumn();
 
 if ($userDbId <= 0) {
@@ -117,7 +117,7 @@ if ($userDbId <= 0) {
     exit('ユーザーIDの取得に失敗しました');
 }
 
-$pdo->prepare('REPLACE INTO lw_user_tokens (user_id, access_token, refresh_token, expires_at) VALUES (:uid,:at,:rt,:ea)')
+$pdo->prepare('REPLACE INTO pr_user_tokens (user_id, access_token, refresh_token, expires_at) VALUES (:uid,:at,:rt,:ea)')
     ->execute([':uid' => $userDbId, ':at' => $accessToken, ':rt' => $refreshToken, ':ea' => $expiresAt]);
 
 $appSession     = b64url(random_bytes(32));
@@ -125,7 +125,7 @@ $appSessionHash = sha256hex($appSession);
 $appTtl         = (int)($sec['app_session_ttl'] ?? (60 * 60 * 24 * 14));
 $appExp         = time() + $appTtl;
 
-$pdo->prepare('INSERT INTO lw_app_sessions (session_hash, user_id, expires_at) VALUES (:h,:uid,:ea) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id), expires_at=VALUES(expires_at)')
+$pdo->prepare('INSERT INTO pr_app_sessions (session_hash, user_id, expires_at) VALUES (:h,:uid,:ea) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id), expires_at=VALUES(expires_at)')
     ->execute([':h' => $appSessionHash, ':uid' => $userDbId, ':ea' => $appExp]);
 
 $pdo->commit();

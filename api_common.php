@@ -18,8 +18,8 @@ function require_app_session_row(PDO $pdo): array {
 
     $st = $pdo->prepare(
         'SELECT s.user_id, s.expires_at, u.lw_user_id
-       FROM lw_app_sessions s
-       JOIN lw_users u ON u.id = s.user_id
+       FROM pr_app_sessions s
+       JOIN pr_users u ON u.id = s.user_id
       WHERE s.session_hash = :h
       LIMIT 1'
     );
@@ -35,7 +35,7 @@ function require_app_session_row(PDO $pdo): array {
         json_fail(401, 'session_expired');
     }
 
-    $tok = $pdo->prepare('SELECT access_token, refresh_token, expires_at FROM lw_user_tokens WHERE user_id=:uid');
+    $tok = $pdo->prepare('SELECT access_token, refresh_token, expires_at FROM pr_user_tokens WHERE user_id=:uid');
     $tok->execute([':uid' => (int)$row['user_id']]);
     $trow = $tok->fetch();
     if (!$trow) {
@@ -105,7 +105,7 @@ function refresh_access_token(PDO $pdo, array $sess): array {
     $expiresAt = time() + $expiresIn;
 
     $pdo->prepare(
-        'REPLACE INTO lw_user_tokens (user_id, access_token, refresh_token, expires_at)
+        'REPLACE INTO pr_user_tokens (user_id, access_token, refresh_token, expires_at)
      VALUES (:uid,:at,:rt,:ea)'
     )->execute([
         ':uid' => $sess['user_db_id'],

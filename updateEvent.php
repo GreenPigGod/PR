@@ -46,7 +46,7 @@ if ($eventId === '' || $calendarId === '' || $start === '' || $end === '') {
 }
 
 $stmt = $pdo->prepare(
-    "UPDATE lw_events
+    "UPDATE pr_events
    SET emo_score = :emo
    WHERE lw_user_id = :uid
      AND event_id = :eid
@@ -120,7 +120,7 @@ function ensure_user_id(PDO $pdo, array $sess): array {
     $uid = fetch_my_user_id($sess);
     if ($uid === '') return $sess;
 
-    $stmt = $pdo->prepare("UPDATE lw_app_sessions SET lw_user_id=:uid WHERE id=:id");
+    $stmt = $pdo->prepare("UPDATE pr_app_sessions SET lw_user_id=:uid WHERE id=:id");
     $stmt->execute([':uid'=>$uid, ':id'=>$sess['id']]);
 
     $sess['lw_user_id'] = $uid;

@@ -266,7 +266,7 @@ try {
 
     if ($juchuNum !== null) {
         $stmtJ = $pdo->prepare(
-            "UPDATE lw_tasks SET juchu_num = :juchu_num, updated_at = CURRENT_TIMESTAMP WHERE task_id = :task_id"
+            "UPDATE pr_tasks SET juchu_num = :juchu_num, updated_at = CURRENT_TIMESTAMP WHERE task_id = :task_id"
         );
         $stmtJ->execute([':juchu_num' => $juchuNum, ':task_id' => $taskId]);
     }

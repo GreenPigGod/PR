@@ -8,7 +8,7 @@ $pdo = pdo_from_cfg($cfg['db']);
 $token = require_bearer();
 $hash  = sha256hex($token);
 
-$pdo->prepare('DELETE FROM lw_app_sessions WHERE session_hash = :h')
+$pdo->prepare('DELETE FROM pr_app_sessions WHERE session_hash = :h')
     ->execute([':h' => $hash]);
 
 json_ok(['ok' => true]);

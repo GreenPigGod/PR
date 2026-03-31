@@ -69,8 +69,8 @@ function require_app_session(): array {
             s.expires_at,
             u.id AS user_id,
             u.lw_user_id
-        FROM lw_app_sessions s
-        JOIN lw_users u ON u.id = s.user_id
+        FROM pr_app_sessions s
+        JOIN pr_users u ON u.id = s.user_id
         WHERE s.session_hash = :h
         LIMIT 1
     ");
@@ -88,7 +88,7 @@ function require_app_session(): array {
         $ttl = (int)($cfg['sec']['app_session_ttl'] ?? (60*60*24*14));
         $newExp = $now + $ttl;
 
-        $pdo->prepare("UPDATE lw_app_sessions SET expires_at = :ea WHERE session_hash = :h")
+        $pdo->prepare("UPDATE pr_app_sessions SET expires_at = :ea WHERE session_hash = :h")
             ->execute([':ea' => $newExp, ':h' => $hash]);
 
         $row['expires_at'] = $newExp;

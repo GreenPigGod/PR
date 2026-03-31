@@ -19,7 +19,7 @@ function ensure_user_id(PDO $pdo, array $sess): array {
     if ($uid === '') return $sess;
 
     // ?: app_sessions ????????/????????DB??????
-    $stmt = $pdo->prepare("UPDATE lw_app_sessions SET lw_user_id=:uid WHERE id=:id");
+    $stmt = $pdo->prepare("UPDATE pr_app_sessions SET lw_user_id=:uid WHERE id=:id");
     $stmt->execute([':uid'=>$uid, ':id'=>$sess['id']]);
 
     $sess['lw_user_id'] = $uid;

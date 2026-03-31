@@ -89,7 +89,7 @@ if ($eventId !== '') {
     $startDt = (new DateTime($start))->setTimezone($tz)->format('Y-m-d H:i:s');
     $endDt   = (new DateTime($end))->setTimezone($tz)->format('Y-m-d H:i:s');
     $pdo->prepare(
-        "INSERT INTO lw_events (lw_user_id, event_id, calendar_id, task_id, title, start_at, end_at, memo, deleted)
+        "INSERT INTO pr_events (lw_user_id, event_id, calendar_id, task_id, title, start_at, end_at, memo, deleted)
          VALUES (:uid, :eid, :calid, :tid, :title, :start, :end, :memo, 0)
          ON DUPLICATE KEY UPDATE
            calendar_id = VALUES(calendar_id),

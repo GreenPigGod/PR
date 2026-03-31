@@ -213,7 +213,7 @@ try {
      * 3) ローカルDB保存
      */
     $stmt = $pdo->prepare(
-        "INSERT INTO lw_tasks (
+        "INSERT INTO pr_tasks (
             lw_user_id,
             task_id,
             category_id,

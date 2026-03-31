@@ -181,7 +181,7 @@ function ensure_user_id(PDO $pdo, array $sess): array {
     if ($uid === '') return $sess;
 
     // ?: app_sessions ????????/????????DB??????
-    $stmt = $pdo->prepare("UPDATE lw_app_sessions SET lw_user_id=:uid WHERE id=:id");
+    $stmt = $pdo->prepare("UPDATE pr_app_sessions SET lw_user_id=:uid WHERE id=:id");
     $stmt->execute([':uid'=>$uid, ':id'=>$sess['id']]);
 
     $sess['lw_user_id'] = $uid;
@@ -200,14 +200,14 @@ function works_api_call(array $sess, string $method, string $path, ?array $query
 //TODO: ? UPSERT: PHPMyAdmin?????upsert???
 function upsert_user(PDO $pdo, string $userId): void {
     $stmt = $pdo->prepare(
-        "INSERT INTO lw_users (lw_user_id) VALUES (:uid)
+        "INSERT INTO pr_users (lw_user_id) VALUES (:uid)
          ON DUPLICATE KEY UPDATE lw_user_id = lw_user_id"
     );
     $stmt->execute([':uid' => $userId]);
 }
 function upsert_category(PDO $pdo, string $userId, string $categoryId, string $categoryName, ?int $sortOrder = null): void {
     $stmt = $pdo->prepare(
-        "INSERT INTO lw_categories (lw_user_id, category_id, category_name, sort_order)
+        "INSERT INTO pr_categories (lw_user_id, category_id, category_name, sort_order)
          VALUES (:uid, :cid, :cname, :sort)
          ON DUPLICATE KEY UPDATE category_name = VALUES(category_name), sort_order = VALUES(sort_order), updated_at = CURRENT_TIMESTAMP"
     );
@@ -220,7 +220,7 @@ function upsert_category(PDO $pdo, string $userId, string $categoryId, string $c
 }
 function upsert_calendar(PDO $pdo, string $userId, string $calendarId, ?string $calendarName = null): void {
     $stmt = $pdo->prepare(
-        "INSERT INTO lw_calendars (lw_user_id, calendar_id, calendar_name)
+        "INSERT INTO pr_calendars (lw_user_id, calendar_id, calendar_name)
          VALUES (:uid, :calid, :calname)
          ON DUPLICATE KEY UPDATE calendar_name = VALUES(calendar_name), updated_at = CURRENT_TIMESTAMP"
     );
@@ -249,7 +249,7 @@ function upsert_task(PDO $pdo, string $userId, string $taskId, string $categoryI
     $status = $statusMap[$completed] ?? 'NOT_STARTED';
 
     $stmt = $pdo->prepare(
-        "INSERT INTO lw_tasks (lw_user_id, task_id, category_id, task_name, deadline, completed, content)
+        "INSERT INTO pr_tasks (lw_user_id, task_id, category_id, task_name, deadline, completed, content)
          VALUES (:uid, :tid, :cid, :tname, :deadline, :completed, :content)
          ON DUPLICATE KEY UPDATE
            category_id = VALUES(category_id),
@@ -283,7 +283,7 @@ function upsert_event(PDO $pdo, string $userId, string $eventId, string $calenda
     $endFormatted = $endDt->format('Y-m-d H:i:s');
 
     $stmt = $pdo->prepare(
-        "INSERT INTO lw_events (lw_user_id, event_id, calendar_id, task_id, title, start_at, end_at, memo, deleted)
+        "INSERT INTO pr_events (lw_user_id, event_id, calendar_id, task_id, title, start_at, end_at, memo, deleted)
    VALUES (:uid, :eid, :calid, :tid, :title, :start, :end, :memo, 0)
    ON DUPLICATE KEY UPDATE
      calendar_id = VALUES(calendar_id),
@@ -313,7 +313,7 @@ function upsert_event(PDO $pdo, string $userId, string $eventId, string $calenda
 function mark_deleted_tasks(PDO $pdo, string $userId, array $fetchedTaskIds): void {
     if (empty($fetchedTaskIds)) {
         $stmt = $pdo->prepare(
-            "UPDATE lw_tasks SET deleted = 1
+            "UPDATE pr_tasks SET deleted = 1
              WHERE lw_user_id = :uid AND deleted = 0"
         );
         $stmt->execute([':uid' => $userId]);
@@ -322,7 +322,7 @@ function mark_deleted_tasks(PDO $pdo, string $userId, array $fetchedTaskIds): vo
 
     $placeholders = implode(',', array_fill(0, count($fetchedTaskIds), '?'));
     $stmt = $pdo->prepare(
-        "UPDATE lw_tasks SET deleted = 1
+        "UPDATE pr_tasks SET deleted = 1
          WHERE lw_user_id = ?
            AND task_id NOT IN ({$placeholders})
            AND deleted = 0"
@@ -336,7 +336,7 @@ function mark_deleted_tasks(PDO $pdo, string $userId, array $fetchedTaskIds): vo
 function mark_deleted_events(PDO $pdo, string $userId, array $fetchedEventIds, string $fromDt, string $untilDt): void {
     if (empty($fetchedEventIds)) {
         $stmt = $pdo->prepare(
-            "UPDATE lw_events SET deleted = 1
+            "UPDATE pr_events SET deleted = 1
              WHERE lw_user_id = :uid
                AND start_at >= :from
                AND start_at < :until
@@ -348,7 +348,7 @@ function mark_deleted_events(PDO $pdo, string $userId, array $fetchedEventIds, s
 
     $placeholders = implode(',', array_fill(0, count($fetchedEventIds), '?'));
     $stmt = $pdo->prepare(
-        "UPDATE lw_events SET deleted = 1
+        "UPDATE pr_events SET deleted = 1
          WHERE lw_user_id = ?
            AND start_at >= ?
            AND start_at < ?
@@ -367,7 +367,7 @@ function mark_deleted_events(PDO $pdo, string $userId, array $fetchedEventIds, s
 function select_categories(PDO $pdo, string $userId): array {
     $stmt = $pdo->prepare(
         "SELECT category_id, category_name, sort_order
-         FROM lw_categories
+         FROM pr_categories
          WHERE lw_user_id = :uid
          ORDER BY sort_order ASC"
     );
@@ -381,7 +381,7 @@ function select_categories(PDO $pdo, string $userId): array {
 function select_tasks_by_category(PDO $pdo, string $userId, string $categoryId): array {
     $stmt = $pdo->prepare(
         "SELECT task_id, task_name, deadline, completed, content, juchu_num
-         FROM lw_tasks
+         FROM pr_tasks
          WHERE lw_user_id = :uid AND category_id = :cid AND deleted = 0
          ORDER BY task_id ASC"
     );
@@ -395,7 +395,7 @@ function select_tasks_by_category(PDO $pdo, string $userId, string $categoryId):
 function select_events_by_task(PDO $pdo, string $userId, string $taskId): array {
     $stmt = $pdo->prepare(
         "SELECT event_id, calendar_id, title, start_at, end_at, memo, emo_score
-         FROM lw_events
+         FROM pr_events
          WHERE lw_user_id = :uid AND task_id = :tid AND deleted = 0
          ORDER BY start_at ASC"
     );
@@ -409,7 +409,7 @@ function select_events_by_task(PDO $pdo, string $userId, string $taskId): array 
 function select_incomplete_events(PDO $pdo, string $userId): array {
     $stmt = $pdo->prepare(
         "SELECT event_id, calendar_id, title, start_at, end_at, memo
-         FROM lw_events
+         FROM pr_events
          WHERE lw_user_id = :uid AND task_id IS NULL AND deleted = 0
          ORDER BY start_at ASC"
     );
